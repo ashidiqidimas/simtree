@@ -3,18 +3,30 @@ import { select } from "@inquirer/prompts"
 import { readSimulators, readLocks, pruneStaleLocks, lockSimulator } from "./state.js"
 import type { Simulator } from "./state.js"
 
+interface SimctlDevice {
+  udid: string
+  name: string
+}
+
+function listAvailableDevices(): Array<SimctlDevice> {
+  const output = execSync("xcrun simctl list devices available --json", {
+    encoding: "utf-8",
+  })
+  const data = JSON.parse(output)
+  const devices: Array<SimctlDevice> = []
+  for (const runtime of Object.values(data.devices) as Array<Array<SimctlDevice>>) {
+    for (const device of runtime) {
+      devices.push({ udid: device.udid, name: device.name })
+    }
+  }
+  return devices
+}
+
 export function resolveSimulatorName(udid: string): string {
   try {
-    const output = execSync("xcrun simctl list devices available --json", {
-      encoding: "utf-8",
-    })
-    const data = JSON.parse(output)
-    for (const runtime of Object.values(data.devices) as Array<Array<{ udid: string; name: string }>>) {
-      for (const device of runtime) {
-        if (device.udid === udid) {
-          return device.name
-        }
-      }
+    const device = listAvailableDevices().find((d) => d.udid === udid)
+    if (device) {
+      return device.name
     }
   } catch {
     // Fall through
@@ -23,10 +35,19 @@ export function resolveSimulatorName(udid: string): string {
   process.exit(1)
 }
 
+export function getAvailableSimulators(): Array<SimctlDevice> {
+  try {
+    return listAvailableDevices()
+  } catch {
+    console.error("Error: failed to list available simulators.")
+    process.exit(1)
+  }
+}
+
 export async function assignSimulator(worktreePath: string): Promise<Simulator> {
   const simulators = readSimulators()
   if (simulators.length === 0) {
-    console.error("Error: no simulators in pool. Run `simtree simulator add <udid>` first.")
+    console.error("Error: no simulators in pool. Run `simtree simulator add` first.")
     process.exit(1)
   }
 
