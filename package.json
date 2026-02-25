@@ -1,0 +1,28 @@
+{
+  "name": "simtree",
+  "version": "0.1.0",
+  "description": "Manage git worktrees with automatic iOS simulator assignment",
+  "type": "module",
+  "bin": {
+    "simtree": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "link": "pnpm build && pnpm link --global"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.9.0",
+  "dependencies": {
+    "@inquirer/prompts": "^8.3.0",
+    "commander": "^14.0.3",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
