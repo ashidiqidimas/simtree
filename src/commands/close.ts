@@ -1,7 +1,14 @@
 import path from "node:path"
 import { Command } from "commander"
 import { select } from "@inquirer/prompts"
-import { getWorktreesDir, removeWorktree, listWorktrees } from "../git.js"
+import {
+  getWorktreesDir,
+  removeWorktree,
+  listWorktrees,
+  hasRemoteBranch,
+  deleteLocalBranch,
+  deleteRemoteBranch,
+} from "../git.js"
 import { unlockByWorktree } from "../state.js"
 
 export const closeCommand = new Command("close")
@@ -37,4 +44,33 @@ export const closeCommand = new Command("close")
 
     unlockByWorktree(worktreePath)
     console.log(`Simulator unlocked for: ${worktreePath}`)
+
+    const hasRemote = hasRemoteBranch(branch)
+
+    const choices: { name: string; value: string }[] = [
+      { name: "No, keep the branch", value: "keep" },
+      { name: "Delete local branch", value: "local" },
+    ]
+
+    if (hasRemote) {
+      choices.push({
+        name: "Delete local and remote branch",
+        value: "both",
+      })
+    }
+
+    const deleteChoice = await select({
+      message: `Delete branch "${branch}"?`,
+      choices,
+    })
+
+    if (deleteChoice === "local" || deleteChoice === "both") {
+      deleteLocalBranch(branch)
+      console.log(`Deleted local branch "${branch}"`)
+    }
+
+    if (deleteChoice === "both") {
+      deleteRemoteBranch(branch)
+      console.log(`Deleted remote branch "${branch}"`)
+    }
   })
