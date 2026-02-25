@@ -4,20 +4,22 @@ import { parse, stringify } from "yaml"
 import { CONFIG_TEMPLATE_FILE } from "./state.js"
 import type { Simulator } from "./state.js"
 
+interface SessionDefaults {
+  workspacePath?: string
+  scheme?: string
+  configuration?: string
+  simulatorName?: string
+  simulatorId?: string
+  simulatorPlatform?: string
+  derivedDataPath?: string
+  platform?: string
+  [key: string]: unknown
+}
+
 interface XcodeBuildConfig {
   schemaVersion: number
   enabledWorkflows: string[]
-  sessionDefaults: {
-    workspacePath: string
-    scheme: string
-    configuration: string
-    simulatorName: string
-    simulatorId: string
-    simulatorPlatform: string
-    derivedDataPath: string
-    platform: string
-    [key: string]: unknown
-  }
+  sessionDefaults?: SessionDefaults
   [key: string]: unknown
 }
 
@@ -48,18 +50,18 @@ export function generateConfig(
   const raw = fs.readFileSync(templatePath, "utf-8")
   const config: XcodeBuildConfig = parse(raw)
 
-  // Rewrite simulator fields
+  if (!config.sessionDefaults) {
+    config.sessionDefaults = {}
+  }
+
   config.sessionDefaults.simulatorId = simulator.udid
   config.sessionDefaults.simulatorName = simulator.name
 
-  // Rewrite workspace path: replace repo root with worktree path
-  const oldWorkspace = config.sessionDefaults.workspacePath
-  if (oldWorkspace) {
-    const workspaceRelative = path.basename(oldWorkspace)
+  if (config.sessionDefaults.workspacePath) {
+    const workspaceRelative = path.basename(config.sessionDefaults.workspacePath)
     config.sessionDefaults.workspacePath = path.join(worktreePath, workspaceRelative)
   }
 
-  // Rewrite derived data path
   config.sessionDefaults.derivedDataPath = path.join(
     worktreePath,
     ".xcodebuildmcp",
