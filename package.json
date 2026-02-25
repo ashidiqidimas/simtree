@@ -1,19 +1,27 @@
 {
-  "name": "simtree",
+  "name": "@ashidiqidimas/simtree",
   "version": "0.1.0",
   "description": "Manage git worktrees with automatic iOS simulator assignment",
   "type": "module",
   "bin": {
     "simtree": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "prepublishOnly": "tsup",
     "link": "pnpm build && pnpm link --global"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["worktree", "git", "simulator", "xcode", "ios", "cli"],
+  "author": "ashidiqidimas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ashidiqidimas/simtree.git"
+  },
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",

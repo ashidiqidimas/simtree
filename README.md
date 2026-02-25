@@ -14,8 +14,7 @@ CLI tool for managing git worktrees with automatic iOS simulator assignment. Bui
 ## Install
 
 ```bash
-pnpm install
-pnpm link --global
+pnpm add -g @ashidiqidimas/simtree
 simtree completions  # install zsh completions
 ```
 
