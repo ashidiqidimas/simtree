@@ -23,8 +23,8 @@ simtree completions  # install zsh completions
 Add simulators to the pool:
 
 ```bash
-simtree sim add <udid>   # name is auto-resolved from Xcode
-simtree sim add <udid>
+simtree simulator add <udid>   # name is auto-resolved from Xcode
+simtree simulator add <udid>
 ```
 
 Create a `.simtree` file in your repo root to list gitignored files that should be copied to worktrees:
@@ -52,15 +52,15 @@ simtree close              # interactive picker
 ### Simulator management
 
 ```bash
-simtree sim list           # show pool and lock status
-simtree sim add <udid>     # add simulator to pool
-simtree sim remove <udid>  # remove from pool
-simtree sim prune          # unlock simulators whose worktree no longer exists
+simtree simulator list           # show pool and lock status
+simtree simulator add <udid>     # add simulator to pool
+simtree simulator remove <udid>  # remove from pool
+simtree simulator prune          # unlock simulators whose worktree no longer exists
 ```
 
 ## How it works
 
-**Simulator pool** is stored globally at `~/.simtree/simulators.json`. You manage it with `simtree sim add/remove`.
+**Simulator pool** is stored globally at `~/.simtree/simulators.json`. You manage it with `simtree simulator add/remove`.
 
 **Locks** are tracked in `~/.simtree/locks.json`. When you create a worktree, the first available simulator is locked to it. When all simulators are locked, an interactive prompt lets you force-assign one.
 

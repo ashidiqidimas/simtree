@@ -26,7 +26,7 @@ export function resolveSimulatorName(udid: string): string {
 export async function assignSimulator(worktreePath: string): Promise<Simulator> {
   const simulators = readSimulators()
   if (simulators.length === 0) {
-    console.error("Error: no simulators in pool. Run `simtree sim add <udid>` first.")
+    console.error("Error: no simulators in pool. Run `simtree simulator add <udid>` first.")
     process.exit(1)
   }
 

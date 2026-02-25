@@ -2,10 +2,10 @@ import { Command } from "commander"
 import { readSimulators, writeSimulators, readLocks, pruneStaleLocks } from "../state.js"
 import { resolveSimulatorName } from "../simulator.js"
 
-export const simCommand = new Command("sim")
+export const simulatorCommand = new Command("simulator")
   .description("Manage simulator pool")
 
-simCommand
+simulatorCommand
   .command("add <udid>")
   .description("Add a simulator to the pool")
   .action((udid: string) => {
@@ -20,7 +20,7 @@ simCommand
     console.log(`Added: ${name} (${udid})`)
   })
 
-simCommand
+simulatorCommand
   .command("remove <udid>")
   .description("Remove a simulator from the pool")
   .action((udid: string) => {
@@ -34,7 +34,7 @@ simCommand
     console.log(`Removed: ${udid}`)
   })
 
-simCommand
+simulatorCommand
   .command("list")
   .description("Show all simulators and their lock status")
   .action(() => {
@@ -42,7 +42,7 @@ simCommand
     const locks = readLocks()
 
     if (simulators.length === 0) {
-      console.log("No simulators in pool. Run `simtree sim add <udid>` to add one.")
+      console.log("No simulators in pool. Run `simtree simulator add <udid>` to add one.")
       return
     }
 
@@ -53,7 +53,7 @@ simCommand
     }
   })
 
-simCommand
+simulatorCommand
   .command("prune")
   .description("Unlock simulators whose worktree no longer exists")
   .action(() => {

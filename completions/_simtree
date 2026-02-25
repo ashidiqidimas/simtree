@@ -48,7 +48,7 @@ _simtree() {
     'create:Create a worktree with automatic simulator assignment'
     'close:Remove a worktree and unlock its simulator'
     'list:List active worktrees with their assigned simulators'
-    'sim:Manage simulator pool'
+    'simulator:Manage simulator pool'
     'help:Display help for command'
   )
 
@@ -77,22 +77,22 @@ _simtree() {
             '-h[display help for command]' \
             '--help[display help for command]'
           ;;
-        sim)
-          local -a sim_commands
-          sim_commands=(
+        simulator)
+          local -a simulator_commands
+          simulator_commands=(
             'add:Add a simulator to the pool'
             'remove:Remove a simulator from the pool'
             'list:Show all simulators and their lock status'
             'prune:Unlock simulators whose worktree no longer exists'
           )
           _arguments -C \
-            '1:sim command:->sim_command' \
-            '*::sim arg:->sim_args'
+            '1:simulator command:->simulator_command' \
+            '*::simulator arg:->simulator_args'
           case "$state" in
-            sim_command)
-              _describe 'sim command' sim_commands
+            simulator_command)
+              _describe 'simulator command' simulator_commands
               ;;
-            sim_args)
+            simulator_args)
               case "$words[1]" in
                 add)
                   _arguments '1:udid:_simtree_available_udids'
