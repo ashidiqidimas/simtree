@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process"
+import fs from "node:fs"
 import path from "node:path"
 
 export function getRepoRoot(): string {
@@ -75,6 +76,24 @@ export function deleteLocalBranch(branch: string): void {
 
 export function deleteRemoteBranch(branch: string): void {
   execSync(`git push origin --delete "${branch}"`, { stdio: "inherit" })
+}
+
+export function getCurrentBranch(): string | null {
+  try {
+    return execSync("git symbolic-ref --short HEAD", { encoding: "utf-8" }).trim()
+  } catch {
+    return null
+  }
+}
+
+export function isInsideWorktree(): boolean {
+  const toplevel = getRepoRoot()
+  const gitPath = path.join(toplevel, ".git")
+  return fs.statSync(gitPath).isFile()
+}
+
+export function isWorkingTreeDirty(): boolean {
+  return execSync("git status --porcelain", { encoding: "utf-8" }).trim().length > 0
 }
 
 export function listWorktrees(): WorktreeInfo[] {
