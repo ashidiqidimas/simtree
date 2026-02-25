@@ -1,6 +1,7 @@
 import { program } from "commander"
 import { simCommand } from "./commands/sim.js"
 import { createCommand } from "./commands/create.js"
+import { closeCommand } from "./commands/close.js"
 
 program
   .name("simtree")
@@ -9,5 +10,6 @@ program
 
 program.addCommand(simCommand)
 program.addCommand(createCommand)
+program.addCommand(closeCommand)
 
 program.parse()
