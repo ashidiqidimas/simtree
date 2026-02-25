@@ -14,22 +14,27 @@ export function getWorktreesDir(): string {
   return path.join(getRepoRoot(), ".worktrees")
 }
 
+export function branchExists(branch: string): boolean {
+  try {
+    execSync(`git rev-parse --verify "${branch}"`, { stdio: "pipe" })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function createWorktree(branch: string): string {
   const worktreePath = path.join(getWorktreesDir(), branch)
+  const useExistingBranch = branchExists(branch)
+  const cmd = useExistingBranch
+    ? `git worktree add "${worktreePath}" "${branch}"`
+    : `git worktree add "${worktreePath}" -b "${branch}"`
+
   try {
-    execSync(`git worktree add "${worktreePath}" -b "${branch}"`, {
-      stdio: "inherit",
-    })
+    execSync(cmd, { stdio: "inherit" })
   } catch {
-    // Branch might already exist, try without -b
-    try {
-      execSync(`git worktree add "${worktreePath}" "${branch}"`, {
-        stdio: "inherit",
-      })
-    } catch (e) {
-      console.error(`Error: failed to create worktree for branch "${branch}".`)
-      process.exit(1)
-    }
+    console.error(`Error: failed to create worktree for branch "${branch}".`)
+    process.exit(1)
   }
   return worktreePath
 }
@@ -51,6 +56,25 @@ export interface WorktreeInfo {
   branch: string
   head: string
   bare: boolean
+}
+
+export function hasRemoteBranch(branch: string): boolean {
+  try {
+    const output = execSync(`git ls-remote --heads origin "${branch}"`, {
+      encoding: "utf-8",
+    })
+    return output.trim().length > 0
+  } catch {
+    return false
+  }
+}
+
+export function deleteLocalBranch(branch: string): void {
+  execSync(`git branch -D "${branch}"`, { stdio: "inherit" })
+}
+
+export function deleteRemoteBranch(branch: string): void {
+  execSync(`git push origin --delete "${branch}"`, { stdio: "inherit" })
 }
 
 export function listWorktrees(): WorktreeInfo[] {
