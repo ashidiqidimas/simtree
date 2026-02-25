@@ -18,4 +18,5 @@ Publish `@ashidiqidimas/simtree` to npm.
 5. Run `npm publish --access public --ignore-scripts --otp <code>`
 6. If OTP fails, ask for a fresh code and retry immediately
 7. Run `git push && git push --tags`
-8. Report the published version and link: https://www.npmjs.com/package/@ashidiqidimas/simtree
+8. Create a GitHub release for the new tag using `gh release create` with a summary of changes since the last release
+9. Report the published version and link: https://www.npmjs.com/package/@ashidiqidimas/simtree
