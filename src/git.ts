@@ -1,5 +1,7 @@
 import { execSync } from "node:child_process"
+import crypto from "node:crypto"
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 
 export function getRepoRoot(): string {
@@ -11,8 +13,15 @@ export function getRepoRoot(): string {
   }
 }
 
+function repoNamespace(): string {
+  const repoRoot = getRepoRoot()
+  const repoName = path.basename(repoRoot)
+  const shortHash = crypto.createHash("md5").update(repoRoot).digest("hex").slice(0, 4)
+  return `${repoName}-${shortHash}`
+}
+
 export function getWorktreesDir(): string {
-  return path.join(getRepoRoot(), ".worktrees")
+  return path.join(os.homedir(), ".simtree", "worktrees", repoNamespace())
 }
 
 export function branchExists(branch: string): boolean {
