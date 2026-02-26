@@ -52,6 +52,8 @@ _simtree() {
   commands=(
     'create:Create a worktree with automatic simulator assignment'
     'close:Remove a worktree and unlock its simulator'
+    'done:Close current worktree and open the main directory in \\$EDITOR'
+    'move:Move current branch to a worktree'
     'list:List active worktrees with their assigned simulators'
     'simulator:Manage simulator pool'
     'completions:Manage shell completions'
@@ -77,6 +79,8 @@ _simtree() {
           ;;
         close)
           _arguments '1:worktree branch:_simtree_worktree_branches'
+          ;;
+        done|move)
           ;;
         list)
           _arguments \\

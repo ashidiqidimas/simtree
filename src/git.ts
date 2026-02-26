@@ -92,6 +92,19 @@ export function isInsideWorktree(): boolean {
   return fs.statSync(gitPath).isFile()
 }
 
+export function getMainRepoRoot(): string {
+  try {
+    const gitCommonDir = execSync(
+      "git rev-parse --path-format=absolute --git-common-dir",
+      { encoding: "utf-8" },
+    ).trim()
+    return path.dirname(gitCommonDir)
+  } catch {
+    console.error("Error: not inside a git repository.")
+    process.exit(1)
+  }
+}
+
 export function isWorkingTreeDirty(): boolean {
   return execSync("git status --porcelain", { encoding: "utf-8" }).trim().length > 0
 }

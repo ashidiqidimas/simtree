@@ -3,6 +3,7 @@ import { simulatorCommand } from "./commands/simulator.js"
 import { createCommand } from "./commands/create.js"
 import { closeCommand } from "./commands/close.js"
 import { moveCommand } from "./commands/move.js"
+import { doneCommand } from "./commands/done.js"
 import { listCommand } from "./commands/list.js"
 import { completionsCommand } from "./commands/completions.js"
 
@@ -15,6 +16,7 @@ program.addCommand(simulatorCommand)
 program.addCommand(createCommand)
 program.addCommand(closeCommand)
 program.addCommand(moveCommand)
+program.addCommand(doneCommand)
 program.addCommand(listCommand)
 program.addCommand(completionsCommand)
 
