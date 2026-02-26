@@ -1,7 +1,9 @@
 import { Command } from "commander"
-import { select } from "@inquirer/prompts"
-import { readSimulators, writeSimulators, readLocks, pruneStaleLocks } from "../state.js"
-import { resolveSimulatorName, getAvailableSimulators } from "../simulator.js"
+import { confirm, select } from "@inquirer/prompts"
+import { readSimulators, writeSimulators, readLocks, pruneStaleLocks, unlockByWorktree } from "../state.js"
+import { resolveSimulatorName, getAvailableSimulators, assignSimulator } from "../simulator.js"
+import { getRepoRoot } from "../git.js"
+import { generateConfig } from "../config.js"
 
 export const simulatorCommand = new Command("simulator")
   .description("Manage simulator pool")
@@ -117,4 +119,34 @@ simulatorCommand
     } else {
       console.log("No stale locks found.")
     }
+  })
+
+simulatorCommand
+  .command("assign")
+  .description("Assign a simulator from the pool to the current directory")
+  .action(async () => {
+    const repoRoot = getRepoRoot()
+    const locks = pruneStaleLocks()
+    const existingLock = locks.find((l) => l.worktreePath === repoRoot)
+
+    if (existingLock) {
+      const simulators = readSimulators()
+      const currentSim = simulators.find((s) => s.udid === existingLock.udid)
+      const name = currentSim?.name ?? existingLock.udid
+
+      console.log(`This directory already has simulator: ${name} (${existingLock.udid})`)
+      const reassign = await confirm({
+        message: "Reassign a different simulator?",
+        default: false,
+      })
+      if (!reassign) {
+        return
+      }
+      unlockByWorktree(repoRoot)
+    }
+
+    const simulator = await assignSimulator(repoRoot)
+    generateConfig(repoRoot, repoRoot, simulator)
+
+    console.log(`\nSimulator assigned: ${simulator.name} (${simulator.udid})`)
   })
