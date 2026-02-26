@@ -12,8 +12,11 @@ _simtree_branches() {
 }
 
 _simtree_worktree_branches() {
-  local worktrees_dir
-  worktrees_dir="$(git rev-parse --show-toplevel 2>/dev/null)/.worktrees"
+  local repo_root repo_name short_hash worktrees_dir
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+  repo_name="\${repo_root:t}"
+  short_hash="$(echo -n "$repo_root" | md5 | cut -c1-4)"
+  worktrees_dir="$HOME/.simtree/worktrees/\${repo_name}-\${short_hash}"
   if [[ -d "$worktrees_dir" ]]; then
     local -a dirs
     dirs=(\${worktrees_dir}/*(/:t))

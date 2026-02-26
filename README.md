@@ -68,4 +68,4 @@ simtree simulator prune          # unlock simulators whose worktree no longer ex
 
 **Config generation**: reads your repo's `.xcodebuildmcp/config.yaml` as a template, swaps the simulator ID/name and rewrites paths to point into the worktree. Falls back to `~/.simtree/config-template.yaml` if the repo doesn't have one.
 
-**Worktrees** are created under `<repo>/.worktrees/<branch>/`.
+**Worktrees** are created under `~/.simtree/worktrees/<repoName>-<hash>/<branch>/`.
