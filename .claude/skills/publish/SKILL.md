@@ -13,7 +13,8 @@ Publish `@ashidiqidimas/simtree` to npm.
 
 1. Determine bump type from `$ARGUMENTS` (default to `patch` if not provided)
 2. Run `pnpm build` and verify it succeeds
-3. Run `npm version $ARGUMENTS` to bump version and create a git tag (use `patch` if no argument)
+3. Run `pnpm link --global` to install the CLI locally on this system
+4. Run `npm version $ARGUMENTS` to bump version and create a git tag (use `patch` if no argument)
 4. Ask the user for their npm OTP code
 5. Run `npm publish --access public --ignore-scripts --otp <code>`
 6. If OTP fails, ask for a fresh code and retry immediately
