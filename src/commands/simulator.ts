@@ -150,3 +150,24 @@ simulatorCommand
 
     console.log(`\nSimulator assigned: ${simulator.name} (${simulator.udid})`)
   })
+
+simulatorCommand
+  .command("release")
+  .description("Release the simulator assigned to the current directory")
+  .action(() => {
+    const repoRoot = getRepoRoot()
+    const locks = pruneStaleLocks()
+    const existingLock = locks.find((l) => l.worktreePath === repoRoot)
+
+    if (!existingLock) {
+      console.log("No simulator is assigned to this directory.")
+      return
+    }
+
+    const simulators = readSimulators()
+    const sim = simulators.find((s) => s.udid === existingLock.udid)
+    const name = sim?.name ?? existingLock.udid
+
+    unlockByWorktree(repoRoot)
+    console.log(`Released simulator: ${name} (${existingLock.udid})`)
+  })
