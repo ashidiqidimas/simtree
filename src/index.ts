@@ -2,6 +2,7 @@ import { program } from "commander"
 import { simulatorCommand } from "./commands/simulator.js"
 import { createCommand } from "./commands/create.js"
 import { closeCommand } from "./commands/close.js"
+import { moveCommand } from "./commands/move.js"
 import { listCommand } from "./commands/list.js"
 import { completionsCommand } from "./commands/completions.js"
 
@@ -13,6 +14,7 @@ program
 program.addCommand(simulatorCommand)
 program.addCommand(createCommand)
 program.addCommand(closeCommand)
+program.addCommand(moveCommand)
 program.addCommand(listCommand)
 program.addCommand(completionsCommand)
 
