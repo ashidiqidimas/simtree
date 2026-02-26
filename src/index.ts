@@ -1,3 +1,4 @@
+import { createRequire } from "node:module"
 import { program } from "commander"
 import { simulatorCommand } from "./commands/simulator.js"
 import { createCommand } from "./commands/create.js"
@@ -7,10 +8,13 @@ import { doneCommand } from "./commands/done.js"
 import { listCommand } from "./commands/list.js"
 import { completionsCommand } from "./commands/completions.js"
 
+const require = createRequire(import.meta.url)
+const { version } = require("../package.json")
+
 program
   .name("simtree")
   .description("Manage git worktrees with automatic iOS simulator assignment")
-  .version("0.1.0")
+  .version(version)
 
 program.addCommand(simulatorCommand)
 program.addCommand(createCommand)
