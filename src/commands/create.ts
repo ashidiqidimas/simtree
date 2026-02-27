@@ -14,6 +14,7 @@ import {
 import { assignSimulator } from "../simulator.js"
 import { generateConfig } from "../config.js"
 import { copyFiles } from "../copy.js"
+import { runHook } from "../hooks.js"
 import { unlockByWorktree, getDefaultBranch } from "../state.js"
 
 export const createCommand = new Command("create")
@@ -89,6 +90,14 @@ export const createCommand = new Command("create")
     const simulator = await assignSimulator(worktreePath)
 
     generateConfig(repoRoot, worktreePath, simulator)
+
+    runHook("post-create", {
+      SIMTREE_BRANCH: branch,
+      SIMTREE_WORKTREE_PATH: worktreePath,
+      SIMTREE_REPO_ROOT: repoRoot,
+      SIMTREE_SIMULATOR_UDID: simulator.udid,
+      SIMTREE_SIMULATOR_NAME: simulator.name,
+    }, worktreePath)
 
     console.log(`\nWorktree ready: ${worktreePath}`)
     console.log(`Simulator: ${simulator.name} (${simulator.udid})`)
