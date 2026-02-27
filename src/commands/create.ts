@@ -8,11 +8,13 @@ import {
   createWorktree,
   removeWorktree,
   listWorktrees,
+  getCurrentBranch,
+  branchExists,
 } from "../git.js"
 import { assignSimulator } from "../simulator.js"
 import { generateConfig } from "../config.js"
 import { copyFiles } from "../copy.js"
-import { unlockByWorktree } from "../state.js"
+import { unlockByWorktree, getDefaultBranch } from "../state.js"
 
 export const createCommand = new Command("create")
   .description("Create a worktree with automatic simulator assignment")
@@ -57,8 +59,29 @@ export const createCommand = new Command("create")
       removeWorktree(branch)
     }
 
+    let startPoint: string | undefined
+    const isNewBranch = !branchExists(branch)
+    if (isNewBranch) {
+      const currentBranch = getCurrentBranch()
+      const defaultBranch = getDefaultBranch()
+
+      if (currentBranch && currentBranch !== defaultBranch) {
+        const startFrom = await select({
+          message: `You're on "${currentBranch}". Where should "${branch}" start from?`,
+          choices: [
+            { name: `Current branch (${currentBranch})`, value: "current" },
+            { name: `Default branch (${defaultBranch})`, value: "default" },
+          ],
+        })
+
+        if (startFrom === "default") {
+          startPoint = defaultBranch
+        }
+      }
+    }
+
     console.log(`Creating worktree for branch "${branch}"...`)
-    const worktreePath = createWorktree(branch)
+    const worktreePath = createWorktree(branch, startPoint)
 
     console.log("Copying files...")
     copyFiles(repoRoot, worktreePath)
