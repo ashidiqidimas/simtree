@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { parse, stringify } from "yaml"
-import { CONFIG_TEMPLATE_FILE } from "./state.js"
+import { getConfigTemplateFile } from "./state.js"
 import type { Simulator } from "./state.js"
 
 interface SessionDefaults {
@@ -27,7 +27,8 @@ function findTemplate(repoRoot: string): string | null {
   const repoConfig = path.join(repoRoot, ".xcodebuildmcp", "config.yaml")
   if (fs.existsSync(repoConfig)) return repoConfig
 
-  if (fs.existsSync(CONFIG_TEMPLATE_FILE)) return CONFIG_TEMPLATE_FILE
+  const globalTemplate = getConfigTemplateFile()
+  if (fs.existsSync(globalTemplate)) return globalTemplate
 
   return null
 }
@@ -42,7 +43,7 @@ export function generateConfig(
     console.error(
       "Error: no xcodebuildmcp config template found.\n" +
         `  Expected at: ${repoRoot}/.xcodebuildmcp/config.yaml\n` +
-        `  Or global:   ${CONFIG_TEMPLATE_FILE}`,
+        `  Or global:   ${getConfigTemplateFile()}`,
     )
     process.exit(1)
   }
