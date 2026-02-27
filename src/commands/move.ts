@@ -10,8 +10,8 @@ import {
   getCurrentBranch,
   isInsideWorktree,
   isWorkingTreeDirty,
-  branchExists,
 } from "../git.js"
+import { getDefaultBranch } from "../state.js"
 import { assignSimulator } from "../simulator.js"
 import { generateConfig } from "../config.js"
 import { copyFiles } from "../copy.js"
@@ -30,27 +30,14 @@ export const moveCommand = new Command("move")
       process.exit(1)
     }
 
-    let switchTo: string | null = null
-    if (branchExists("main")) {
-      switchTo = "main"
-    } else if (branchExists("master")) {
-      switchTo = "master"
-    }
+    const defaultBranch = getDefaultBranch()
 
-    if (currentBranch === switchTo) {
+    if (currentBranch === defaultBranch) {
       console.error(`Error: already on "${currentBranch}". Nothing to move.`)
       process.exit(1)
     }
 
-    if (!switchTo) {
-      switchTo = await input({
-        message: "Could not find 'main' or 'master'. Enter branch to switch to:",
-      })
-      if (!switchTo.trim()) {
-        console.error("Error: branch name cannot be empty.")
-        process.exit(1)
-      }
-    }
+    const switchTo = defaultBranch
 
     const dirty = isWorkingTreeDirty()
     let moveChanges = false
