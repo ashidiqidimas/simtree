@@ -3,8 +3,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { getSimtreeDir } from "./state.js"
 
+type HookName = "post-create" | "post-close"
+
 export function runHook(
-  hookName: string,
+  hookName: HookName,
   env: Record<string, string>,
   cwd: string
 ): void {
@@ -18,7 +20,7 @@ export function runHook(
     execSync(`sh "${hookPath}"`, {
       cwd,
       env: { ...process.env, ...env },
-      stdio: "pipe",
+      stdio: ["inherit", "inherit", "pipe"],
     })
   } catch (error: unknown) {
     const execError = error as { stderr?: Buffer; status?: number }
