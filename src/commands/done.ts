@@ -35,7 +35,7 @@ export const doneCommand = new Command("done")
     process.chdir(mainRepoRoot)
 
     console.log(`Closing worktree "${branch}"...`)
-    removeWorktree(branch)
+    removeWorktree(branch, worktreePath)
 
     unlockByWorktree(worktreePath)
     console.log(`Simulator unlocked for: ${worktreePath}`)

@@ -13,8 +13,8 @@ export function getRepoRoot(): string {
   }
 }
 
-function repoNamespace(): string {
-  const repoRoot = getRepoRoot()
+export function repoNamespace(): string {
+  const repoRoot = getMainRepoRoot()
   const repoName = path.basename(repoRoot)
   const shortHash = crypto.createHash("md5").update(repoRoot).digest("hex").slice(0, 4)
   return `${repoName}-${shortHash}`
@@ -49,8 +49,8 @@ export function createWorktree(branch: string): string {
   return worktreePath
 }
 
-export function removeWorktree(branch: string): void {
-  const worktreePath = path.join(getWorktreesDir(), branch)
+export function removeWorktree(branch: string, knownPath?: string): void {
+  const worktreePath = knownPath ?? path.join(getWorktreesDir(), branch)
   try {
     execSync(`git worktree remove "${worktreePath}" --force`, {
       stdio: "inherit",
