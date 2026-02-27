@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 
-function getSimtreeDir(): string {
+export function getSimtreeDir(): string {
   return process.env.SIMTREE_HOME ?? path.join(os.homedir(), ".simtree")
 }
 
