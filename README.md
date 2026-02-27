@@ -58,14 +58,82 @@ simtree simulator remove <udid>  # remove from pool
 simtree simulator prune          # unlock simulators whose worktree no longer exists
 ```
 
+## Hooks
+
+simtree supports lifecycle hooks that run shell scripts after worktree creation and removal. Place scripts in `~/.simtree/hooks/`:
+
+| Hook | When it runs | Working directory |
+|------|-------------|-------------------|
+| `post-create.sh` | After worktree is fully set up | The new worktree |
+| `post-close.sh` | After worktree is removed | The main repo root |
+
+Scripts are executed via `sh`, so no `chmod +x` is needed — just create the file.
+
+**Environment variables** available in hooks:
+
+| Variable | post-create | post-close |
+|----------|:-----------:|:----------:|
+| `SIMTREE_BRANCH` | yes | yes |
+| `SIMTREE_WORKTREE_PATH` | yes | yes |
+| `SIMTREE_REPO_ROOT` | yes | yes |
+| `SIMTREE_SIMULATOR_UDID` | yes | — |
+| `SIMTREE_SIMULATOR_NAME` | yes | — |
+
+**Example** — run tuist setup after creating a worktree:
+
+```bash
+mkdir -p ~/.simtree/hooks
+cat > ~/.simtree/hooks/post-create.sh << 'EOF'
+tuist install && tuist cache && tuist generate --no-open
+EOF
+```
+
+If a hook fails, simtree prints a warning and continues — hooks never abort the parent command.
+
+## Configuration
+
+### Global (`~/.simtree/`)
+
+All global state lives in `~/.simtree/` (override with `SIMTREE_HOME` env var):
+
+| File | Purpose |
+|------|---------|
+| `config.json` | Global settings (e.g., `defaultBranch`) |
+| `simulators.json` | Simulator pool managed by `simtree simulator add/remove` |
+| `locks.json` | Tracks which simulator is assigned to which worktree |
+| `config-template.yaml` | Fallback xcodebuildmcp config template |
+| `hooks/post-create.sh` | Hook script run after worktree creation |
+| `hooks/post-close.sh` | Hook script run after worktree removal |
+
+```json
+// config.json
+{
+  "defaultBranch": "main"
+}
+```
+
+### Per-repo (`.simtree`)
+
+Create a `.simtree` JSON file in your repo root:
+
+```json
+{
+  "copyFiles": ["CLAUDE.local.md"]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `copyFiles` | List of gitignored files to copy from the main repo into new worktrees |
+
+### Per-repo xcodebuildmcp template (`.xcodebuildmcp/config.yaml`)
+
+If your repo has `.xcodebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree. If the repo doesn't have one, it falls back to `~/.simtree/config-template.yaml`.
+
 ## How it works
 
-**Simulator pool** is stored globally at `~/.simtree/simulators.json`. You manage it with `simtree simulator add/remove`.
-
-**Locks** are tracked in `~/.simtree/locks.json`. When you create a worktree, the first available simulator is locked to it. When all simulators are locked, an interactive prompt lets you force-assign one.
+**Simulator pool**: managed via `simtree simulator add/remove`. When you create a worktree, the first available simulator is locked to it. When all are locked, an interactive prompt lets you force-assign one.
 
 **Stale lock detection**: if a worktree path no longer exists on disk, its lock is automatically pruned.
-
-**Config generation**: reads your repo's `.xcodebuildmcp/config.yaml` as a template, swaps the simulator ID/name and rewrites paths to point into the worktree. Falls back to `~/.simtree/config-template.yaml` if the repo doesn't have one.
 
 **Worktrees** are created under `~/.simtree/worktrees/<repoName>-<hash>/<branch>/`.

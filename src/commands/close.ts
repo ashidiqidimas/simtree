@@ -2,6 +2,7 @@ import path from "node:path"
 import { Command } from "commander"
 import { select } from "@inquirer/prompts"
 import {
+  getRepoRoot,
   getWorktreesDir,
   removeWorktree,
   listWorktrees,
@@ -9,6 +10,7 @@ import {
   deleteLocalBranch,
   deleteRemoteBranch,
 } from "../git.js"
+import { runHook } from "../hooks.js"
 import { unlockByWorktree } from "../state.js"
 
 export const closeCommand = new Command("close")
@@ -44,6 +46,13 @@ export const closeCommand = new Command("close")
 
     unlockByWorktree(worktreePath)
     console.log(`Simulator unlocked for: ${worktreePath}`)
+
+    const repoRoot = getRepoRoot()
+    runHook("post-close", {
+      SIMTREE_BRANCH: branch,
+      SIMTREE_WORKTREE_PATH: worktreePath,
+      SIMTREE_REPO_ROOT: repoRoot,
+    }, repoRoot)
 
     const hasRemote = hasRemoteBranch(branch)
 
