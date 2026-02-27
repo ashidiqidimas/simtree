@@ -13,7 +13,7 @@ export function getRepoRoot(): string {
   }
 }
 
-function repoNamespace(): string {
+export function repoNamespace(): string {
   const repoRoot = getMainRepoRoot()
   const repoName = path.basename(repoRoot)
   const shortHash = crypto.createHash("md5").update(repoRoot).digest("hex").slice(0, 4)
