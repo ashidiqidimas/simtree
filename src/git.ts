@@ -33,12 +33,18 @@ export function branchExists(branch: string): boolean {
   }
 }
 
-export function createWorktree(branch: string): string {
+export function createWorktree(branch: string, startPoint?: string): string {
   const worktreePath = path.join(getWorktreesDir(), branch)
   const useExistingBranch = branchExists(branch)
-  const cmd = useExistingBranch
-    ? `git worktree add "${worktreePath}" "${branch}"`
-    : `git worktree add "${worktreePath}" -b "${branch}"`
+
+  let cmd: string
+  if (useExistingBranch) {
+    cmd = `git worktree add "${worktreePath}" "${branch}"`
+  } else if (startPoint) {
+    cmd = `git worktree add "${worktreePath}" -b "${branch}" "${startPoint}"`
+  } else {
+    cmd = `git worktree add "${worktreePath}" -b "${branch}"`
+  }
 
   try {
     execSync(cmd, { stdio: "pipe" })
