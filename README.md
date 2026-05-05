@@ -41,6 +41,9 @@ Create a `.simtree` file in your repo root to list gitignored files that should 
 # Create a worktree — assigns a simulator, copies files, writes config
 simtree create feature-branch
 
+# Initialize an already-created worktree — assigns a simulator, copies files, writes config
+simtree init
+
 # List active worktrees and their simulators
 simtree list
 

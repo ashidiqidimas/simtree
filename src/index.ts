@@ -2,6 +2,7 @@ import { createRequire } from "node:module"
 import { program } from "commander"
 import { simulatorCommand } from "./commands/simulator.js"
 import { createCommand } from "./commands/create.js"
+import { initCommand } from "./commands/init.js"
 import { closeCommand } from "./commands/close.js"
 import { moveCommand } from "./commands/move.js"
 import { doneCommand } from "./commands/done.js"
@@ -18,6 +19,7 @@ program
 
 program.addCommand(simulatorCommand)
 program.addCommand(createCommand)
+program.addCommand(initCommand)
 program.addCommand(closeCommand)
 program.addCommand(moveCommand)
 program.addCommand(doneCommand)

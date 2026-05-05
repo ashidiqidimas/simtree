@@ -4,7 +4,9 @@ import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import {
   getDefaultBranch,
+  lockSimulator,
   readGlobalConfig,
+  readLocks,
   writeGlobalConfig,
 } from "../../src/state.js"
 
@@ -59,5 +61,16 @@ describe("global config", () => {
 
     const configPath = path.join(nested, "config.json")
     expect(fs.existsSync(configPath)).toBe(true)
+  })
+
+  it("lockSimulator keeps only one lock per worktree", () => {
+    const worktreePath = fs.mkdtempSync(path.join(tempDir, "worktree-"))
+
+    lockSimulator("SIM-1", worktreePath)
+    lockSimulator("SIM-2", worktreePath)
+
+    expect(readLocks()).toMatchObject([
+      { udid: "SIM-2", worktreePath },
+    ])
   })
 })

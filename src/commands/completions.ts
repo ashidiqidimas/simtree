@@ -54,6 +54,7 @@ _simtree() {
   local -a commands
   commands=(
     'create:Create a worktree with automatic simulator assignment'
+    'init:Initialize the current worktree with a simulator and config'
     'close:Remove a worktree and unlock its simulator'
     'done:Close current worktree and open the main directory in \\$EDITOR'
     'move:Move current branch to a worktree'
@@ -79,6 +80,8 @@ _simtree() {
       case "$words[1]" in
         create)
           _arguments '1:branch:_simtree_branches'
+          ;;
+        init)
           ;;
         close)
           _arguments '1:worktree branch:_simtree_worktree_branches'
