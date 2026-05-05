@@ -6,7 +6,7 @@ CLI tool for managing git worktrees with automatic iOS simulator assignment. Bui
 
 - Creates git worktrees with a single command
 - Automatically assigns an available iOS simulator from a pool
-- Generates `.xcodebuildmcp/config.yaml` in each worktree with the correct simulator
+- Generates `.xcodebuildmcp/config.yaml` or `.flowdeck/config.json` in each worktree with the correct simulator
 - Copies gitignored files (like `CLAUDE.local.md`) into new worktrees
 - Locks simulators so multiple agents don't fight over the same one
 - Cleans up everything when you close a worktree
@@ -126,9 +126,13 @@ Create a `.simtree` JSON file in your repo root:
 |-------|-------------|
 | `copyFiles` | List of gitignored files to copy from the main repo into new worktrees |
 
-### Per-repo xcodebuildmcp template (`.xcodebuildmcp/config.yaml`)
+### Per-repo tool config templates
 
-If your repo has `.xcodebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree. If the repo doesn't have one, it falls back to `~/.simtree/config-template.yaml`.
+If your repo has `.xcodebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree.
+
+If your repo has `.flowdeck/config.json`, simtree also uses it as a template. It supports FlowDeck fields like `workspace`, `scheme`, `configuration`, `platform`, `simulatorUdid`, and `derivedDataPath`. It rewrites `simulatorUdid`, `workspace`, and `derivedDataPath`, leaving other values unchanged.
+
+If the repo has neither config, simtree falls back to `~/.simtree/config-template.yaml` for xcodebuildmcp.
 
 ## How it works
 
