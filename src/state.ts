@@ -68,7 +68,7 @@ export function pruneStaleLocks(): Lock[] {
 }
 
 export function lockSimulator(udid: string, worktreePath: string): void {
-  const locks = pruneStaleLocks()
+  const locks = pruneStaleLocks().filter((l) => l.worktreePath !== worktreePath)
   const existing = locks.find((l) => l.udid === udid)
   if (existing) {
     existing.worktreePath = worktreePath

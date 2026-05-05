@@ -95,7 +95,7 @@ export function deleteRemoteBranch(branch: string): void {
 
 export function getCurrentBranch(): string | null {
   try {
-    return execSync("git symbolic-ref --short HEAD", { encoding: "utf-8" }).trim()
+    return execSync("git symbolic-ref --short HEAD 2>/dev/null", { encoding: "utf-8" }).trim()
   } catch {
     return null
   }

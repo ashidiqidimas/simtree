@@ -52,6 +52,13 @@ export async function assignSimulator(worktreePath: string): Promise<Simulator> 
   }
 
   const locks = pruneStaleLocks()
+  const existingLock = locks.find((l) => l.worktreePath === worktreePath)
+  const existingSimulator = simulators.find((s) => s.udid === existingLock?.udid)
+  if (existingSimulator) {
+    console.log(`Using assigned simulator: ${existingSimulator.name} (${existingSimulator.udid})`)
+    return existingSimulator
+  }
+
   const lockedUdids = new Set(locks.map((l) => l.udid))
   const unlocked = simulators.filter((s) => !lockedUdids.has(s.udid))
 
