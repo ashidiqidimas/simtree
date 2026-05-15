@@ -133,7 +133,7 @@ Create a `.simtree` JSON file in your repo root:
 
 If your repo has `.xcodebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree.
 
-If your repo has `.flowdeck/config.json`, simtree also uses it as a template. It supports FlowDeck fields like `workspace`, `scheme`, `configuration`, `platform`, `simulatorUdid`, and `derivedDataPath`. It rewrites `simulatorUdid`, `workspace`, and `derivedDataPath`, leaving other values unchanged.
+If your repo has `.flowdeck/config.json`, simtree also uses it as a template. It supports FlowDeck fields like `workspace`, `scheme`, `configuration`, `platform`, `simulatorUdid`, `simulatorName`, and `derivedDataPath`. It rewrites `simulatorUdid`, `simulatorName`, `workspace`, and `derivedDataPath`, leaving other values unchanged.
 
 If the repo has neither config, simtree falls back to `~/.simtree/config-template.yaml` for xcodebuildmcp.
 
