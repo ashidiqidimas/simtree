@@ -29,36 +29,93 @@ interface FlowDeckConfig {
   configuration?: string
   platform?: string
   simulatorUdid?: string
+  simulatorName?: string
   derivedDataPath?: string
   [key: string]: unknown
 }
 
+interface ConfigTemplate {
+  path: string
+  relativeDir: string
+}
+
 interface ConfigTemplates {
-  xcodebuildmcp: string | null
-  flowdeck: string | null
+  xcodebuildmcp: ConfigTemplate[]
+  flowdeck: ConfigTemplate[]
+}
+
+function findRepoTemplates(repoRoot: string): ConfigTemplates {
+  const templates: ConfigTemplates = { xcodebuildmcp: [], flowdeck: [] }
+  const ignoredDirs = new Set([".git", ".worktrees", "node_modules"])
+
+  function visit(dir: string): void {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || ignoredDirs.has(entry.name)) continue
+
+      const entryPath = path.join(dir, entry.name)
+      const relativeDir = path.relative(repoRoot, dir)
+
+      if (entry.name === ".xcodebuildmcp") {
+        const configPath = path.join(entryPath, "config.yaml")
+        if (fs.existsSync(configPath)) {
+          templates.xcodebuildmcp.push({ path: configPath, relativeDir })
+        }
+        continue
+      }
+
+      if (entry.name === ".flowdeck") {
+        const configPath = path.join(entryPath, "config.json")
+        if (fs.existsSync(configPath)) {
+          templates.flowdeck.push({ path: configPath, relativeDir })
+        }
+        continue
+      }
+
+      visit(entryPath)
+    }
+  }
+
+  visit(repoRoot)
+  return templates
 }
 
 function findTemplates(repoRoot: string): ConfigTemplates {
-  const repoXcodeBuildConfig = path.join(repoRoot, ".xcodebuildmcp", "config.yaml")
-  const repoFlowDeckConfig = path.join(repoRoot, ".flowdeck", "config.json")
+  const templates = findRepoTemplates(repoRoot)
 
-  const xcodebuildmcp = fs.existsSync(repoXcodeBuildConfig) ? repoXcodeBuildConfig : null
-  const flowdeck = fs.existsSync(repoFlowDeckConfig) ? repoFlowDeckConfig : null
-
-  if (xcodebuildmcp || flowdeck) {
-    return { xcodebuildmcp, flowdeck }
+  if (templates.xcodebuildmcp.length > 0 || templates.flowdeck.length > 0) {
+    return templates
   }
 
   const globalTemplate = getConfigTemplateFile()
   return {
-    xcodebuildmcp: fs.existsSync(globalTemplate) ? globalTemplate : null,
-    flowdeck: null,
+    xcodebuildmcp: fs.existsSync(globalTemplate) ? [{ path: globalTemplate, relativeDir: "" }] : [],
+    flowdeck: [],
   }
+}
+
+function rebaseProjectPath(
+  projectPath: string,
+  repoRoot: string,
+  worktreePath: string,
+  relativeDir: string,
+): string {
+  if (!path.isAbsolute(projectPath)) {
+    return path.join(worktreePath, relativeDir, projectPath)
+  }
+
+  const relativePath = path.relative(repoRoot, projectPath)
+  if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
+    return path.join(worktreePath, relativePath)
+  }
+
+  return path.join(worktreePath, relativeDir, path.basename(projectPath))
 }
 
 function generateXcodeBuildConfig(
   templatePath: string,
+  repoRoot: string,
   worktreePath: string,
+  relativeDir: string,
   simulator: Simulator,
 ): void {
   const raw = fs.readFileSync(templatePath, "utf-8")
@@ -72,17 +129,22 @@ function generateXcodeBuildConfig(
   config.sessionDefaults.simulatorName = simulator.name
 
   if (config.sessionDefaults.workspacePath) {
-    const workspaceRelative = path.basename(config.sessionDefaults.workspacePath)
-    config.sessionDefaults.workspacePath = path.join(worktreePath, workspaceRelative)
+    config.sessionDefaults.workspacePath = rebaseProjectPath(
+      config.sessionDefaults.workspacePath,
+      repoRoot,
+      worktreePath,
+      relativeDir,
+    )
   }
 
   config.sessionDefaults.derivedDataPath = path.join(
     worktreePath,
+    relativeDir,
     ".xcodebuildmcp",
     ".derivedData",
   )
 
-  const outputDir = path.join(worktreePath, ".xcodebuildmcp")
+  const outputDir = path.join(worktreePath, relativeDir, ".xcodebuildmcp")
   fs.mkdirSync(outputDir, { recursive: true })
   const outputPath = path.join(outputDir, "config.yaml")
   fs.writeFileSync(outputPath, stringify(config))
@@ -91,22 +153,24 @@ function generateXcodeBuildConfig(
 
 function generateFlowDeckConfig(
   templatePath: string,
+  repoRoot: string,
   worktreePath: string,
+  relativeDir: string,
   simulator: Simulator,
 ): void {
   const raw = fs.readFileSync(templatePath, "utf-8")
   const config: FlowDeckConfig = JSON.parse(raw)
 
   config.simulatorUdid = simulator.udid
+  config.simulatorName = simulator.name
 
   if (config.workspace) {
-    const workspaceRelative = path.basename(config.workspace)
-    config.workspace = path.join(worktreePath, workspaceRelative)
+    config.workspace = rebaseProjectPath(config.workspace, repoRoot, worktreePath, relativeDir)
   }
 
-  config.derivedDataPath = path.join(worktreePath, ".flowdeck", ".derivedData")
+  config.derivedDataPath = path.join(worktreePath, relativeDir, ".flowdeck", ".derivedData")
 
-  const outputDir = path.join(worktreePath, ".flowdeck")
+  const outputDir = path.join(worktreePath, relativeDir, ".flowdeck")
   fs.mkdirSync(outputDir, { recursive: true })
   const outputPath = path.join(outputDir, "config.json")
   fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`)
@@ -119,21 +183,21 @@ export function generateConfig(
   simulator: Simulator,
 ): void {
   const templates = findTemplates(repoRoot)
-  if (!templates.xcodebuildmcp && !templates.flowdeck) {
+  if (templates.xcodebuildmcp.length === 0 && templates.flowdeck.length === 0) {
     console.error(
       "Error: no config template found.\n" +
-        `  Expected at: ${repoRoot}/.xcodebuildmcp/config.yaml\n` +
-        `  Or:          ${repoRoot}/.flowdeck/config.json\n` +
-        `  Or global:   ${getConfigTemplateFile()}`,
+        `  Expected under: ${repoRoot}/**/.xcodebuildmcp/config.yaml\n` +
+        `  Or under:       ${repoRoot}/**/.flowdeck/config.json\n` +
+        `  Or global:      ${getConfigTemplateFile()}`,
     )
     process.exit(1)
   }
 
-  if (templates.xcodebuildmcp) {
-    generateXcodeBuildConfig(templates.xcodebuildmcp, worktreePath, simulator)
+  for (const template of templates.xcodebuildmcp) {
+    generateXcodeBuildConfig(template.path, repoRoot, worktreePath, template.relativeDir, simulator)
   }
 
-  if (templates.flowdeck) {
-    generateFlowDeckConfig(templates.flowdeck, worktreePath, simulator)
+  for (const template of templates.flowdeck) {
+    generateFlowDeckConfig(template.path, repoRoot, worktreePath, template.relativeDir, simulator)
   }
 }
