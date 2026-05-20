@@ -4,7 +4,7 @@
   "description": "Manage git worktrees with automatic iOS simulator assignment",
   "type": "module",
   "bin": {
-    "simtree": "./dist/index.js"
+    "simtree": "dist/index.js"
   },
   "files": [
     "dist"
@@ -29,7 +29,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ashidiqidimas/simtree.git"
+    "url": "git+https://github.com/ashidiqidimas/simtree.git"
   },
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
