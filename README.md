@@ -44,6 +44,9 @@ simtree create feature-branch
 # Initialize an already-created worktree — assigns a simulator, copies files, writes config
 simtree init
 
+# Deinitialize current worktree — unlocks its simulator without removing the worktree
+simtree deinit
+
 # List active worktrees and their simulators
 simtree list
 

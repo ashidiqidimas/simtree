@@ -137,12 +137,14 @@ function generateXcodeBuildConfig(
     )
   }
 
-  config.sessionDefaults.derivedDataPath = path.join(
-    worktreePath,
-    relativeDir,
-    ".xcodebuildmcp",
-    ".derivedData",
-  )
+  if (config.sessionDefaults.derivedDataPath) {
+    config.sessionDefaults.derivedDataPath = rebaseProjectPath(
+      config.sessionDefaults.derivedDataPath,
+      repoRoot,
+      worktreePath,
+      relativeDir,
+    )
+  }
 
   const outputDir = path.join(worktreePath, relativeDir, ".xcodebuildmcp")
   fs.mkdirSync(outputDir, { recursive: true })
@@ -168,7 +170,14 @@ function generateFlowDeckConfig(
     config.workspace = rebaseProjectPath(config.workspace, repoRoot, worktreePath, relativeDir)
   }
 
-  config.derivedDataPath = path.join(worktreePath, relativeDir, ".flowdeck", ".derivedData")
+  if (config.derivedDataPath) {
+    config.derivedDataPath = rebaseProjectPath(
+      config.derivedDataPath,
+      repoRoot,
+      worktreePath,
+      relativeDir,
+    )
+  }
 
   const outputDir = path.join(worktreePath, relativeDir, ".flowdeck")
   fs.mkdirSync(outputDir, { recursive: true })
