@@ -6,7 +6,7 @@ CLI tool for managing git worktrees with automatic iOS simulator assignment. Bui
 
 - Creates git worktrees with a single command
 - Automatically assigns an available iOS simulator from a pool
-- Generates `.xcodebuildmcp/config.yaml` or `.flowdeck/config.json` in each worktree with the correct simulator
+- Generates `.mobilebuildmcp/config.yaml` (or legacy `.xcodebuildmcp/config.yaml`) or `.flowdeck/config.json` in each worktree with the correct simulator
 - Copies gitignored files (like `CLAUDE.local.md`) into new worktrees
 - Locks simulators so multiple agents don't fight over the same one
 - Cleans up everything when you close a worktree
@@ -107,7 +107,7 @@ All global state lives in `~/.simtree/` (override with `SIMTREE_HOME` env var):
 | `config.json` | Global settings (e.g., `defaultBranch`) |
 | `simulators.json` | Simulator pool managed by `simtree simulator add/remove` |
 | `locks.json` | Tracks which simulator is assigned to which worktree |
-| `config-template.yaml` | Fallback xcodebuildmcp config template |
+| `config-template.yaml` | Fallback MobileBuildMCP config template |
 | `hooks/post-create.sh` | Hook script run after worktree creation |
 | `hooks/post-close.sh` | Hook script run after worktree removal |
 
@@ -134,11 +134,11 @@ Create a `.simtree` JSON file in your repo root:
 
 ### Per-repo tool config templates
 
-If your repo has `.xcodebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree.
+If your repo has `.mobilebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree. The legacy XcodeBuildMCP `.xcodebuildmcp/config.yaml` is still supported and is written back to `.xcodebuildmcp/` in the worktree.
 
 If your repo has `.flowdeck/config.json`, simtree also uses it as a template. It supports FlowDeck fields like `workspace`, `scheme`, `configuration`, `platform`, `simulatorUdid`, `simulatorName`, and `derivedDataPath`. It rewrites `simulatorUdid`, `simulatorName`, `workspace`, and `derivedDataPath`, leaving other values unchanged.
 
-If the repo has neither config, simtree falls back to `~/.simtree/config-template.yaml` for xcodebuildmcp.
+If the repo has none of these configs, simtree falls back to `~/.simtree/config-template.yaml` and writes it to `.mobilebuildmcp/config.yaml`.
 
 ## How it works
 
