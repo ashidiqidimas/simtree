@@ -84,7 +84,79 @@ describe("generateConfig", () => {
     }
   })
 
-  it("preserves nested workspace paths in .xcodebuildmcp/config.yaml", () => {
+  it("generates .mobilebuildmcp/config.yaml from a repo template", () => {
+    const repoRoot = makeTempDir()
+    const worktreePath = makeTempDir()
+
+    try {
+      fs.mkdirSync(path.join(repoRoot, ".mobilebuildmcp"), { recursive: true })
+      fs.writeFileSync(
+        path.join(repoRoot, ".mobilebuildmcp", "config.yaml"),
+        [
+          "schemaVersion: 1",
+          "enabledWorkflows: []",
+          "sessionDefaults:",
+          `  workspacePath: ${path.join(repoRoot, "App.xcworkspace")}`,
+          "  simulatorId: OLD-UDID",
+        ].join("\n"),
+      )
+
+      generateConfig(repoRoot, worktreePath, {
+        udid: "NEW-UDID",
+        name: "iPhone 17 Pro",
+      })
+
+      const output = fs.readFileSync(
+        path.join(worktreePath, ".mobilebuildmcp", "config.yaml"),
+        "utf-8",
+      )
+      expect(output).toContain(`workspacePath: ${path.join(worktreePath, "App.xcworkspace")}`)
+      expect(output).toContain("simulatorId: NEW-UDID")
+      expect(output).toContain("simulatorName: iPhone 17 Pro")
+      expect(fs.existsSync(path.join(worktreePath, ".xcodebuildmcp"))).toBe(false)
+    } finally {
+      fs.rmSync(repoRoot, { recursive: true, force: true })
+      fs.rmSync(worktreePath, { recursive: true, force: true })
+    }
+  })
+
+  it("writes the global fallback template to .mobilebuildmcp/config.yaml", () => {
+    const repoRoot = makeTempDir()
+    const worktreePath = makeTempDir()
+    const simtreeHome = makeTempDir()
+    const previousSimtreeHome = process.env.SIMTREE_HOME
+    process.env.SIMTREE_HOME = simtreeHome
+
+    try {
+      fs.writeFileSync(
+        path.join(simtreeHome, "config-template.yaml"),
+        ["schemaVersion: 1", "enabledWorkflows: []"].join("\n"),
+      )
+
+      generateConfig(repoRoot, worktreePath, {
+        udid: "NEW-UDID",
+        name: "iPhone 17 Pro",
+      })
+
+      const output = fs.readFileSync(
+        path.join(worktreePath, ".mobilebuildmcp", "config.yaml"),
+        "utf-8",
+      )
+      expect(output).toContain("simulatorId: NEW-UDID")
+      expect(fs.existsSync(path.join(worktreePath, ".xcodebuildmcp"))).toBe(false)
+    } finally {
+      if (previousSimtreeHome === undefined) {
+        delete process.env.SIMTREE_HOME
+      } else {
+        process.env.SIMTREE_HOME = previousSimtreeHome
+      }
+      fs.rmSync(repoRoot, { recursive: true, force: true })
+      fs.rmSync(worktreePath, { recursive: true, force: true })
+      fs.rmSync(simtreeHome, { recursive: true, force: true })
+    }
+  })
+
+  it("preserves nested workspace paths in legacy .xcodebuildmcp/config.yaml", () => {
     const repoRoot = makeTempDir()
     const worktreePath = makeTempDir()
 

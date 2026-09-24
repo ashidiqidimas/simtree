@@ -16,7 +16,7 @@ interface SessionDefaults {
   [key: string]: unknown
 }
 
-interface XcodeBuildConfig {
+interface MobileBuildConfig {
   schemaVersion: number
   enabledWorkflows: string[]
   sessionDefaults?: SessionDefaults
@@ -39,13 +39,22 @@ interface ConfigTemplate {
   relativeDir: string
 }
 
+interface MobileBuildConfigTemplate extends ConfigTemplate {
+  configDirName: string
+}
+
 interface ConfigTemplates {
-  xcodebuildmcp: ConfigTemplate[]
+  mobilebuildmcp: MobileBuildConfigTemplate[]
   flowdeck: ConfigTemplate[]
 }
 
+// XcodeBuildMCP was renamed to MobileBuildMCP, which only reads `.mobilebuildmcp`.
+// The legacy directory stays supported for repos still pinned to XcodeBuildMCP.
+const MOBILEBUILDMCP_CONFIG_DIR = ".mobilebuildmcp"
+const MOBILEBUILDMCP_CONFIG_DIRS = new Set([MOBILEBUILDMCP_CONFIG_DIR, ".xcodebuildmcp"])
+
 function findRepoTemplates(repoRoot: string): ConfigTemplates {
-  const templates: ConfigTemplates = { xcodebuildmcp: [], flowdeck: [] }
+  const templates: ConfigTemplates = { mobilebuildmcp: [], flowdeck: [] }
   const ignoredDirs = new Set([".git", ".worktrees", "node_modules"])
 
   function visit(dir: string): void {
@@ -55,10 +64,10 @@ function findRepoTemplates(repoRoot: string): ConfigTemplates {
       const entryPath = path.join(dir, entry.name)
       const relativeDir = path.relative(repoRoot, dir)
 
-      if (entry.name === ".xcodebuildmcp") {
+      if (MOBILEBUILDMCP_CONFIG_DIRS.has(entry.name)) {
         const configPath = path.join(entryPath, "config.yaml")
         if (fs.existsSync(configPath)) {
-          templates.xcodebuildmcp.push({ path: configPath, relativeDir })
+          templates.mobilebuildmcp.push({ path: configPath, relativeDir, configDirName: entry.name })
         }
         continue
       }
@@ -82,13 +91,15 @@ function findRepoTemplates(repoRoot: string): ConfigTemplates {
 function findTemplates(repoRoot: string): ConfigTemplates {
   const templates = findRepoTemplates(repoRoot)
 
-  if (templates.xcodebuildmcp.length > 0 || templates.flowdeck.length > 0) {
+  if (templates.mobilebuildmcp.length > 0 || templates.flowdeck.length > 0) {
     return templates
   }
 
   const globalTemplate = getConfigTemplateFile()
   return {
-    xcodebuildmcp: fs.existsSync(globalTemplate) ? [{ path: globalTemplate, relativeDir: "" }] : [],
+    mobilebuildmcp: fs.existsSync(globalTemplate)
+      ? [{ path: globalTemplate, relativeDir: "", configDirName: MOBILEBUILDMCP_CONFIG_DIR }]
+      : [],
     flowdeck: [],
   }
 }
@@ -111,15 +122,15 @@ function rebaseProjectPath(
   return path.join(worktreePath, relativeDir, path.basename(projectPath))
 }
 
-function generateXcodeBuildConfig(
-  templatePath: string,
+function generateMobileBuildConfig(
+  template: MobileBuildConfigTemplate,
   repoRoot: string,
   worktreePath: string,
-  relativeDir: string,
   simulator: Simulator,
 ): void {
+  const { path: templatePath, relativeDir, configDirName } = template
   const raw = fs.readFileSync(templatePath, "utf-8")
-  const config: XcodeBuildConfig = parse(raw)
+  const config: MobileBuildConfig = parse(raw)
 
   if (!config.sessionDefaults) {
     config.sessionDefaults = {}
@@ -146,7 +157,7 @@ function generateXcodeBuildConfig(
     )
   }
 
-  const outputDir = path.join(worktreePath, relativeDir, ".xcodebuildmcp")
+  const outputDir = path.join(worktreePath, relativeDir, configDirName)
   fs.mkdirSync(outputDir, { recursive: true })
   const outputPath = path.join(outputDir, "config.yaml")
   fs.writeFileSync(outputPath, stringify(config))
@@ -192,18 +203,19 @@ export function generateConfig(
   simulator: Simulator,
 ): void {
   const templates = findTemplates(repoRoot)
-  if (templates.xcodebuildmcp.length === 0 && templates.flowdeck.length === 0) {
+  if (templates.mobilebuildmcp.length === 0 && templates.flowdeck.length === 0) {
     console.error(
       "Error: no config template found.\n" +
-        `  Expected under: ${repoRoot}/**/.xcodebuildmcp/config.yaml\n` +
+        `  Expected under: ${repoRoot}/**/.mobilebuildmcp/config.yaml\n` +
+        `  Or under:       ${repoRoot}/**/.xcodebuildmcp/config.yaml\n` +
         `  Or under:       ${repoRoot}/**/.flowdeck/config.json\n` +
         `  Or global:      ${getConfigTemplateFile()}`,
     )
     process.exit(1)
   }
 
-  for (const template of templates.xcodebuildmcp) {
-    generateXcodeBuildConfig(template.path, repoRoot, worktreePath, template.relativeDir, simulator)
+  for (const template of templates.mobilebuildmcp) {
+    generateMobileBuildConfig(template, repoRoot, worktreePath, simulator)
   }
 
   for (const template of templates.flowdeck) {
