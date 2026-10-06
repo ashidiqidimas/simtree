@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { parse as parseToml } from "smol-toml"
 import { describe, expect, it } from "vitest"
 import { generateConfig } from "../../src/config.js"
 
@@ -231,6 +232,69 @@ describe("generateConfig", () => {
         `workspacePath: ${path.join(worktreePath, "ios", "App.xcworkspace")}`,
       )
       expect(xcodebuildOutput).not.toContain("derivedDataPath:")
+    } finally {
+      fs.rmSync(repoRoot, { recursive: true, force: true })
+      fs.rmSync(worktreePath, { recursive: true, force: true })
+    }
+  })
+  it("generates sweetpad.toml with the worktree simulator as destination", () => {
+    const repoRoot = makeTempDir()
+    const worktreePath = makeTempDir()
+
+    try {
+      fs.mkdirSync(path.join(repoRoot, "ios"), { recursive: true })
+      fs.writeFileSync(
+        path.join(repoRoot, "ios", "sweetpad.toml"),
+        [
+          `workspace = "${path.join(repoRoot, "ios", "App.xcworkspace")}"`,
+          'scheme = "App"',
+          'destination = "platform=iOS Simulator,id=OLD-UDID"',
+          'developer_dir = "/Applications/Xcode-26.app/Contents/Developer"',
+          "",
+          "[xcodebuild]",
+          'args = ["-skipMacroValidation"]',
+        ].join("\n"),
+      )
+
+      generateConfig(repoRoot, worktreePath, {
+        udid: "NEW-UDID",
+        name: "iPhone 17 Pro",
+      })
+
+      const output = parseToml(
+        fs.readFileSync(path.join(worktreePath, "ios", "sweetpad.toml"), "utf-8"),
+      )
+      expect(output).toEqual({
+        workspace: path.join(worktreePath, "ios", "App.xcworkspace"),
+        scheme: "App",
+        destination: "platform=iOS Simulator,id=NEW-UDID",
+        developer_dir: "/Applications/Xcode-26.app/Contents/Developer",
+        xcodebuild: { args: ["-skipMacroValidation"] },
+      })
+      expect(fs.existsSync(path.join(worktreePath, ".mobilebuildmcp"))).toBe(false)
+    } finally {
+      fs.rmSync(repoRoot, { recursive: true, force: true })
+      fs.rmSync(worktreePath, { recursive: true, force: true })
+    }
+  })
+
+  it("keeps a relative sweetpad.toml workspace relative", () => {
+    const repoRoot = makeTempDir()
+    const worktreePath = makeTempDir()
+
+    try {
+      fs.writeFileSync(path.join(repoRoot, "sweetpad.toml"), 'workspace = "App.xcworkspace"\n')
+
+      generateConfig(repoRoot, worktreePath, {
+        udid: "NEW-UDID",
+        name: "iPhone 17 Pro",
+      })
+
+      const output = parseToml(
+        fs.readFileSync(path.join(worktreePath, "sweetpad.toml"), "utf-8"),
+      )
+      expect(output.workspace).toBe("App.xcworkspace")
+      expect(output.destination).toBe("platform=iOS Simulator,id=NEW-UDID")
     } finally {
       fs.rmSync(repoRoot, { recursive: true, force: true })
       fs.rmSync(worktreePath, { recursive: true, force: true })

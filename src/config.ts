@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { parse, stringify } from "yaml"
+import { parse as parseToml, stringify as stringifyToml } from "smol-toml"
 import { getConfigTemplateFile } from "./state.js"
 import type { Simulator } from "./state.js"
 
@@ -46,7 +47,10 @@ interface MobileBuildConfigTemplate extends ConfigTemplate {
 interface ConfigTemplates {
   mobilebuildmcp: MobileBuildConfigTemplate[]
   flowdeck: ConfigTemplate[]
+  sweetpad: ConfigTemplate[]
 }
+
+const SWEETPAD_CONFIG_FILE = "sweetpad.toml"
 
 // XcodeBuildMCP was renamed to MobileBuildMCP, which only reads `.mobilebuildmcp`.
 // The legacy directory stays supported for repos still pinned to XcodeBuildMCP.
@@ -54,11 +58,19 @@ const MOBILEBUILDMCP_CONFIG_DIR = ".mobilebuildmcp"
 const MOBILEBUILDMCP_CONFIG_DIRS = new Set([MOBILEBUILDMCP_CONFIG_DIR, ".xcodebuildmcp"])
 
 function findRepoTemplates(repoRoot: string): ConfigTemplates {
-  const templates: ConfigTemplates = { mobilebuildmcp: [], flowdeck: [] }
+  const templates: ConfigTemplates = { mobilebuildmcp: [], flowdeck: [], sweetpad: [] }
   const ignoredDirs = new Set([".git", ".worktrees", "node_modules"])
 
   function visit(dir: string): void {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name === SWEETPAD_CONFIG_FILE) {
+        templates.sweetpad.push({
+          path: path.join(dir, entry.name),
+          relativeDir: path.relative(repoRoot, dir),
+        })
+        continue
+      }
+
       if (!entry.isDirectory() || ignoredDirs.has(entry.name)) continue
 
       const entryPath = path.join(dir, entry.name)
@@ -91,7 +103,7 @@ function findRepoTemplates(repoRoot: string): ConfigTemplates {
 function findTemplates(repoRoot: string): ConfigTemplates {
   const templates = findRepoTemplates(repoRoot)
 
-  if (templates.mobilebuildmcp.length > 0 || templates.flowdeck.length > 0) {
+  if (hasTemplates(templates)) {
     return templates
   }
 
@@ -101,7 +113,16 @@ function findTemplates(repoRoot: string): ConfigTemplates {
       ? [{ path: globalTemplate, relativeDir: "", configDirName: MOBILEBUILDMCP_CONFIG_DIR }]
       : [],
     flowdeck: [],
+    sweetpad: [],
   }
+}
+
+function hasTemplates(templates: ConfigTemplates): boolean {
+  return (
+    templates.mobilebuildmcp.length > 0 ||
+    templates.flowdeck.length > 0 ||
+    templates.sweetpad.length > 0
+  )
 }
 
 function rebaseProjectPath(
@@ -197,18 +218,46 @@ function generateFlowDeckConfig(
   console.log(`Written config: ${outputPath}`)
 }
 
+// sweetpad resolves a relative `workspace`/`project` against the file itself, so only absolute
+// paths need rebasing into the worktree.
+function generateSweetPadConfig(
+  template: ConfigTemplate,
+  repoRoot: string,
+  worktreePath: string,
+  simulator: Simulator,
+): void {
+  const { path: templatePath, relativeDir } = template
+  const config = parseToml(fs.readFileSync(templatePath, "utf-8"))
+
+  config.destination = `platform=iOS Simulator,id=${simulator.udid}`
+
+  for (const key of ["workspace", "project"]) {
+    const value = config[key]
+    if (typeof value === "string" && path.isAbsolute(value)) {
+      config[key] = rebaseProjectPath(value, repoRoot, worktreePath, relativeDir)
+    }
+  }
+
+  const outputDir = path.join(worktreePath, relativeDir)
+  fs.mkdirSync(outputDir, { recursive: true })
+  const outputPath = path.join(outputDir, SWEETPAD_CONFIG_FILE)
+  fs.writeFileSync(outputPath, `${stringifyToml(config)}\n`)
+  console.log(`Written config: ${outputPath}`)
+}
+
 export function generateConfig(
   repoRoot: string,
   worktreePath: string,
   simulator: Simulator,
 ): void {
   const templates = findTemplates(repoRoot)
-  if (templates.mobilebuildmcp.length === 0 && templates.flowdeck.length === 0) {
+  if (!hasTemplates(templates)) {
     console.error(
       "Error: no config template found.\n" +
         `  Expected under: ${repoRoot}/**/.mobilebuildmcp/config.yaml\n` +
         `  Or under:       ${repoRoot}/**/.xcodebuildmcp/config.yaml\n` +
         `  Or under:       ${repoRoot}/**/.flowdeck/config.json\n` +
+        `  Or under:       ${repoRoot}/**/sweetpad.toml\n` +
         `  Or global:      ${getConfigTemplateFile()}`,
     )
     process.exit(1)
@@ -220,5 +269,9 @@ export function generateConfig(
 
   for (const template of templates.flowdeck) {
     generateFlowDeckConfig(template.path, repoRoot, worktreePath, template.relativeDir, simulator)
+  }
+
+  for (const template of templates.sweetpad) {
+    generateSweetPadConfig(template, repoRoot, worktreePath, simulator)
   }
 }

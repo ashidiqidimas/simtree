@@ -6,7 +6,7 @@ CLI tool for managing git worktrees with automatic iOS simulator assignment. Bui
 
 - Creates git worktrees with a single command
 - Automatically assigns an available iOS simulator from a pool
-- Generates `.mobilebuildmcp/config.yaml` (or legacy `.xcodebuildmcp/config.yaml`) or `.flowdeck/config.json` in each worktree with the correct simulator
+- Generates `.mobilebuildmcp/config.yaml` (or legacy `.xcodebuildmcp/config.yaml`) or `.flowdeck/config.json` or `sweetpad.toml` in each worktree with the correct simulator
 - Copies gitignored files (like `CLAUDE.local.md`) into new worktrees
 - Locks simulators so multiple agents don't fight over the same one
 - Cleans up everything when you close a worktree
@@ -137,6 +137,8 @@ Create a `.simtree` JSON file in your repo root:
 If your repo has `.mobilebuildmcp/config.yaml`, simtree uses it as a template when generating worktree configs. It rewrites the simulator ID/name and paths to point into the worktree. The legacy XcodeBuildMCP `.xcodebuildmcp/config.yaml` is still supported and is written back to `.xcodebuildmcp/` in the worktree.
 
 If your repo has `.flowdeck/config.json`, simtree also uses it as a template. It supports FlowDeck fields like `workspace`, `scheme`, `configuration`, `platform`, `simulatorUdid`, `simulatorName`, and `derivedDataPath`. It rewrites `simulatorUdid`, `simulatorName`, `workspace`, and `derivedDataPath`, leaving other values unchanged.
+
+If your repo has a `sweetpad.toml` (anywhere in the tree), simtree uses it as a template too. It sets `destination` to `platform=iOS Simulator,id=<udid>` for the worktree's simulator and rebases an absolute `workspace` or `project` into the worktree; relative paths are left alone because sweetpad resolves them against the file. Keep the template gitignored (commit a `sweetpad.toml.example` instead), otherwise the generated file shows up as a change in every worktree.
 
 If the repo has none of these configs, simtree falls back to `~/.simtree/config-template.yaml` and writes it to `.mobilebuildmcp/config.yaml`.
 
